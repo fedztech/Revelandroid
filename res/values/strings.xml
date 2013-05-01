@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="empty"></string>
+    <string name="app_name">Revelandroid</string>
+    <string name="file_name">File Name</string>
+    <string name="menu_settings">Settings</string>
+    <string name="password">Password</string>
+    <string name="open_file_button">Open</string>
+    <string name="title_activity_browse_data">BrowseDataActivity</string>
+    <string name="select_provider">Select Provider</string>
+    <string name="select_provider_instructions">Please select the location where the password file is to be found.</string>
+    <string name="folder">Folder</string>
+    <string name="field_generic_hostname">Hostname</string>
+    <string name="field_generic_password">Password</string>
+    <string name="field_generic_username">Username</string>
+    <string name="field_creditcard_cardtype">Card type</string>
+    <string name="field_creditcard_cardnumber">Card number</string>
+    <string name="field_creditcard_expirydate">Expiry date</string>
+    <string name="field_creditcard_ccv">CCV</string>
+    <string name="field_generic_pin">PIN</string>
+    <string name="field_name">Name</string>
+    <string name="field_description">Description</string>
+    <string name="field_generic_url">URL</string>
+    <string name="field_generic_email">Email</string>
+    <string name="error_NoError">No problems found.</string>
+    <string name="error_Unknown">An unknown error occurred.</string>
+    <string name="error_TimeOut">The operation timed out.</string>
+    <string name="error_File_Empty">The file contains no data.</string>
+    <string name="error_File_Invalid_Format">The format of the file is invalid.</string>
+    <string name="error_NoFiles">There are no files in the Revelandion subdirectory. Please copy the revelantion password files into that subdirectory in order to open them here.</string>
+    <string name="error_InvalidParameters">The given parameters are invalid. Please check them and try again.</string>
+    <string name="error_InvalidPassword">The given password is invalid. Please enter a valid password.</string>
+    <string name="error_InvalidFileChosen">The chosen file is invalid. Please choose a valid file.</string>
+    <string name="error_SDCardNotMounted">The external storage medium is not mounted, please insert the external card and retry.</string>
+    <string name="error_FileNotFound">The requested file was not found. Please do not remove the card while opening the file.</string>
+    <string name="error_CouldNotOpenFile">The file could not be opened for unknown reasons.</string>
+    <string name="error_CouldNotCreateSubdir">The Revelandroid subdirectory could not be created in the external storage.</string>
+    <string name="error_Dropbox_Connect">Could not connect to Dropbox.</string>
+    <string name="error_Dropbox_NoFiles">No files were found in the Dropbox &quot;Revelation&quot; subdirectory. Please copy the revelation files there and try again.</string>
+    <string name="error_Dropbox_TimeoutFileList">Timeout when waiting for the list of files in the Revelation subdirectory.</string>
+	<string name="instr_Dropbox_OpenFile">Select a file from the list, type the password and click open.</string>
+	<string name="instr_Dropbox_Opening">Opening file...</string>
+</resources>
