@@ -21,15 +21,24 @@ import com.dropbox.client2.ProgressListener;
 
 public class DropboxListener_OpenFileProgress extends ProgressListener {
 
-	private double progressPercent;
+	private double progressPercent = 0.0;
 	@Override
 	public void onProgress(long bytes, long total) {
-		progressPercent = bytes / total;
+		if(progressPercent < 1.0)
+		{
+			progressPercent = bytes / total;
+		}
 		
 	}
 	
 	public double getProgress(){
 		return progressPercent;
 	}
+	
+	public void setProgress(double in)
+	{
+		progressPercent = in;
+	}
+	
 
 }

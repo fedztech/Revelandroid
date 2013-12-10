@@ -33,6 +33,8 @@ public class DropboxTask_OpenFile extends AsyncTask<DropboxTaskParams_OpenFile, 
  		try {
  		    DropboxFileInfo info = params[0].api.getFile(params[0].fileName,"",params[0].data,params[0].progress);
  		    Log.i("DbExampleLog", "The downloaded file's rev is: " + info.getMetadata().rev);
+ 		    params[0].progress.setProgress(1.0);
+ 		   
  		} catch (DropboxUnlinkedException e) {
  		    // User has unlinked, ask them to link again here.
  		    Log.e("DbExampleLog", "User has unlinked.");
