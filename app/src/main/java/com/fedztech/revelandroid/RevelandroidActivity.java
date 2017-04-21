@@ -27,6 +27,7 @@ import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.app.ProgressDialog;
 
+import com.fedztech.revelandroid.data.RevelationDataBase;
 /*
  * Main Activity and entry point for the application. 
  * This class does the fragment management.
@@ -102,7 +103,7 @@ public class RevelandroidActivity extends Activity
 	}
 
 	@Override
-	public void onOpenFile(RevelationData revelationData) {
+	public void onOpenFile(RevelationDataBase revelationData) {
 		Fragment_EntryList entryListFragment = (Fragment_EntryList)getFragmentManager().findFragmentByTag("theEntryListFragment");
 		
 		if(entryListFragment == null){
@@ -157,7 +158,7 @@ public class RevelandroidActivity extends Activity
 
 
 	@Override
-	public void onEntrySelected(RevelationData.Entry entry) {
+	public void onEntrySelected(RevelationDataBase.Entry entry) {
 	
 		Fragment_Display_Entry displayEntryFragment = (Fragment_Display_Entry)getFragmentManager().findFragmentById(R.layout.fragment_display_entry);
 		
@@ -174,7 +175,7 @@ public class RevelandroidActivity extends Activity
 
 
 	@Override
-	public void onFolderSelected(RevelationData data, ArrayList<Integer> path) {
+	public void onFolderSelected(RevelationDataBase data, ArrayList<Integer> path) {
 		Fragment_EntryList entryListFragment = (Fragment_EntryList)getFragmentManager().findFragmentByTag("theEntryListFragment");
 		
 		if(entryListFragment == null){
@@ -224,7 +225,7 @@ public class RevelandroidActivity extends Activity
 
 
 	@Override
-	public void onOpenLocalFile(RevelationData rdata) {
+	public void onOpenLocalFile(RevelationDataBase rdata) {
 		onOpenFile(rdata);
 		
 	}

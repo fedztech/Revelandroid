@@ -27,6 +27,8 @@ import android.widget.EditText;
 import android.widget.GridLayout;
 import android.widget.TextView;
 
+import com.fedztech.revelandroid.data.RevelationData;
+
 public class Fragment_Display_Entry extends Fragment {
 	
 	

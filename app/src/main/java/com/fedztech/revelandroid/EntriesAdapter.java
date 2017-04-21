@@ -18,7 +18,7 @@ package com.fedztech.revelandroid;
 
 import java.util.List;
 
-import com.fedztech.revelandroid.RevelationData.Entry;
+import com.fedztech.revelandroid.data.RevelationDataBase.Entry;
 
 import android.app.Activity;
 import android.content.Context;

@@ -38,6 +38,11 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.fedztech.revelandroid.data.RevelationData;
+import com.fedztech.revelandroid.data.RevelationDataBase;
+import com.fedztech.revelandroid.data.RevelationDataFactory;
+import com.fedztech.revelandroid.data.RevelationData_Exception;
+
 public class Fragment_OpenFile_Dropbox extends Fragment implements OnClickListener{
     OnOpenFileListener mCallback;
     
@@ -63,7 +68,7 @@ public class Fragment_OpenFile_Dropbox extends Fragment implements OnClickListen
     // The container Activity must implement this interface so the frag can deliver messages
     public interface OnOpenFileListener {
         /** Called by HeadlinesFragment when a list item is selected */
-        public void onOpenFile(RevelationData position);
+        public void onOpenFile(RevelationDataBase position);
     }
 
     @Override
@@ -107,7 +112,12 @@ public class Fragment_OpenFile_Dropbox extends Fragment implements OnClickListen
 		if(mDBApi != null){
 			boolean isLoggedIn = mDBApi.getSession().isLinked();
 	    	if(!isLoggedIn){
-	    		mDBApi.getSession().startAuthentication(getActivity());
+				try{
+					mDBApi.getSession().startAuthentication(getActivity());
+				}
+				catch(IllegalStateException ex){
+					errorText.setText(ex.getLocalizedMessage());
+				}
 	    	}
 	    	else{
 	    		initializeFields();
@@ -338,17 +348,8 @@ public class Fragment_OpenFile_Dropbox extends Fragment implements OnClickListen
                     passwordField.setText("");
                 }
 
-                
-                RevelationData revelationData = new RevelationData();
                 if(openFileParams.data.size() > 0){
-                	int retVal = revelationData.processEncryptedData(password, openFileParams.data.toByteArray());
-                	
-                	if(retVal == R.string.error_NoError){
-                		mCallback.onOpenFile(revelationData);
-                	}
-                	else{
-                		new DialogFragment_Alert(retVal).show(getFragmentManager(), "");
-                	}
+					mCallback.onOpenFile(RevelationDataFactory.getRevelationData(openFileParams.data.toByteArray(), password));
                 }
                 else{
                 	new DialogFragment_Alert(R.string.error_File_Empty).show(getFragmentManager(), "");
@@ -356,8 +357,10 @@ public class Fragment_OpenFile_Dropbox extends Fragment implements OnClickListen
                   
                 resetFields();
     		    
-    		}  catch (Exception e){
-    			new DialogFragment_Alert(R.string.error_Unknown).show(getFragmentManager(), "");
+    		}  catch (RevelationData_Exception e) {
+				new DialogFragment_Alert(e.getCode()).show(getFragmentManager(), "");
+			}catch(Exception e){
+				new DialogFragment_Alert(R.string.error_Unknown).show(getFragmentManager(), "");
     		} finally {
     		   
     		}  	

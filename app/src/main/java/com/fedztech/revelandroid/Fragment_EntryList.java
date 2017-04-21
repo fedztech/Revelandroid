@@ -31,16 +31,18 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.AdapterView.OnItemClickListener;
 
+import com.fedztech.revelandroid.data.RevelationDataBase;
+
 public class Fragment_EntryList extends Fragment {
 	
 	OnEntrySelectedListener mCallback;
 	
     public interface OnEntrySelectedListener {
-        public void onEntrySelected(RevelationData.Entry entry);
-        public void onFolderSelected(RevelationData data, ArrayList<Integer> path);
+        public void onEntrySelected(RevelationDataBase.Entry entry);
+        public void onFolderSelected(RevelationDataBase data, ArrayList<Integer> path);
     }
-	
-	RevelationData theData;
+
+	RevelationDataBase theData;
 	EntriesAdapter adapter = null;
 	ArrayList<Integer> thePath = null;
 	
@@ -50,7 +52,7 @@ public class Fragment_EntryList extends Fragment {
 		thePath = null;
 	}	
 	
-	public void setArguments(RevelationData data, ArrayList<Integer> path) {
+	public void setArguments(RevelationDataBase data, ArrayList<Integer> path) {
 		theData = data;
 		thePath = path;
 	}
@@ -96,7 +98,7 @@ public class Fragment_EntryList extends Fragment {
 		
 		
 		if(theData != null){
-			List<RevelationData.Entry> currEntries = null;
+			List<RevelationDataBase.Entry> currEntries = null;
 			if(thePath != null){
 				currEntries = theData.getEntries();
 				for(int i= 0; i< thePath.size(); i++){
@@ -135,7 +137,7 @@ public class Fragment_EntryList extends Fragment {
 			@Override
 			public void onItemClick(AdapterView<?> arg0, View arg1, int position, long id) {
 				
-				List<RevelationData.Entry> currEntries = theData.getEntries();
+				List<RevelationDataBase.Entry> currEntries = theData.getEntries();
 				if(thePath != null){
 					for(int i= 0; i< thePath.size(); i++){
 						currEntries = currEntries.get(thePath.get(i)).entries;
@@ -176,7 +178,7 @@ public class Fragment_EntryList extends Fragment {
         }
     } 
     
-    public void setData(RevelationData data)
+    public void setData(RevelationDataBase data)
     {
     	theData = data;
     }

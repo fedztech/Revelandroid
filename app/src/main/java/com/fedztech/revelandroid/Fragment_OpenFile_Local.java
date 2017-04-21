@@ -35,6 +35,13 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.fedztech.revelandroid.data.RevelationData;
+import com.fedztech.revelandroid.data.RevelationDataBase;
+import com.fedztech.revelandroid.data.RevelationDataFactory;
+import com.fedztech.revelandroid.data.RevelationDataTypes;
+import com.fedztech.revelandroid.data.RevelationDataV2;
+import com.fedztech.revelandroid.data.RevelationData_Exception;
+
 public class Fragment_OpenFile_Local extends Fragment implements OnClickListener {
 	OnOpenLocalFileListener mCallback;
 	Spinner fileListSpinner = null;
@@ -47,7 +54,7 @@ public class Fragment_OpenFile_Local extends Fragment implements OnClickListener
     // The container Activity must implement this interface so the frag can deliver messages
     public interface OnOpenLocalFileListener {
         /** Called by HeadlinesFragment when a list item is selected */
-        public void onOpenLocalFile(RevelationData position);
+        public void onOpenLocalFile(RevelationDataBase position);
     }
 	
 	 @Override
@@ -256,14 +263,15 @@ public class Fragment_OpenFile_Local extends Fragment implements OnClickListener
         
         
         if(fileByteArray != null){
-               RevelationData rdata = null;
-               rdata = new RevelationData();
-               if(rdata != null){
-                   rdata.processEncryptedData(password, fileByteArray);
-                   
-                   mCallback.onOpenLocalFile(rdata); 	   
-               }
-	
+			try {
+				mCallback.onOpenLocalFile(RevelationDataFactory.getRevelationData(fileByteArray, password));
+			}
+			catch(RevelationData_Exception ex){
+				errorText.setText(ex.getCode());
+			}
+			catch(IOException ex){
+				errorText.setText(ex.getMessage());
+			}
         }
         else{
         	errorText.setText(R.string.error_CouldNotOpenFile);
