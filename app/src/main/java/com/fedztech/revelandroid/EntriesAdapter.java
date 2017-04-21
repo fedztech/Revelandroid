@@ -68,10 +68,10 @@ public class EntriesAdapter extends ArrayAdapter<Entry> {
 	        holder.txtTitle.setText(entry.name);
 	        
 	        if(entry.type.compareTo("folder") == 0){
-	        	holder.imgIcon.setImageResource(R.drawable.ic_list_folder);
+	        	holder.imgIcon.setImageResource(R.mipmap.ic_list_folder);
 	        }
 	        else{
-	        	holder.imgIcon.setImageResource(R.drawable.ic_launcher);
+	        	holder.imgIcon.setImageResource(R.mipmap.ic_launcher);
 	        }
 	        
 	        
