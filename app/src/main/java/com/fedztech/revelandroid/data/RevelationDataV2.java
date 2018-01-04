@@ -73,8 +73,11 @@ public class RevelationDataV2 extends RevelationDataBase implements RevelationDa
 
         int retVal = R.string.error_NoError;
 
-        System.arraycopy(rawData, 12, salt, 0, saltLength);
-        System.arraycopy(rawData, 20, iv, 0, ivLength);
+        //System.arraycopy(rawData, 12, salt, 0, saltLength);
+        //System.arraycopy(rawData, 20, iv, 0, ivLength);
+
+        salt = Arrays.copyOfRange(rawData, 12, 20);
+        iv = Arrays.copyOfRange(rawData, 20, 36);
 
 
         /*
@@ -129,12 +132,17 @@ public class RevelationDataV2 extends RevelationDataBase implements RevelationDa
             e.printStackTrace();
         }
 
-        byte[] restData = new byte[rawData.length-36];
-        System.arraycopy(rawData,36,restData,0,rawData.length-36);
+        //byte[] restData = new byte[rawData.length-36];
+        //System.arraycopy(rawData,36,restData,0,rawData.length-36);
 
-        byte[] decryptedButCompressed = new byte[rawData.length-36];
+        byte[] decryptedButCompressed = null;//new byte[rawData.length-36];
         try {
-            decryptedButCompressed = cipher.doFinal(restData);
+            byte[] input = Arrays.copyOfRange(rawData, 36, rawData.length);
+            if (input.length % 16 != 0)
+            {
+                throw new RevelationData_Exception(R.string.error_File_Invalid_Format, "Invalid length!", null);
+            }
+            decryptedButCompressed = cipher.doFinal(input);
         } catch (IllegalBlockSizeException|BadPaddingException e) {
             throw new RevelationData_Exception(R.string.error_File_Invalid_Format, "Failed to decrypt data.",e);
         }
@@ -185,5 +193,16 @@ public class RevelationDataV2 extends RevelationDataBase implements RevelationDa
 
         inflater.end();
 
+    }
+    private static byte[] addPadding (byte[] a) {
+        byte padlen = (byte)(16 - (a.length % 16));
+        if (padlen == 0)
+            padlen = 16;
+
+        byte[] b = new byte[a.length + padlen];
+        System.arraycopy(a, 0, b, 0, a.length);
+        for (int i = 0; i < padlen; i++)
+            b[a.length + i] = padlen;
+        return b;
     }
 }
