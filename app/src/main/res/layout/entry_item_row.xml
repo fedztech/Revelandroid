@@ -4,7 +4,7 @@
     android:orientation="horizontal" 
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:id="@id/@+layout/entry_item_row"
+     android:id="@+layout/entry_item_row"
     android:padding="10dp">
     
      
