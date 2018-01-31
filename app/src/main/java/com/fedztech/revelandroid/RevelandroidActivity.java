@@ -20,6 +20,9 @@ import java.io.File;
 import java.util.ArrayList;
 
 import com.fedztech.revelandroid.R;
+
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Environment;
 import android.app.Activity;
@@ -100,6 +103,15 @@ public class RevelandroidActivity extends Activity
 
 	protected void onResume() {
 	    super.onResume();
+	    //Did I get the dropbox key?
+		SharedPreferences prefs = getSharedPreferences("dropbox-settings", Context.MODE_PRIVATE);
+		String dbxId = prefs.getString("dropbox-identification", null);
+		if(dbxId != null && dbxId.compareTo("1") == 0)
+		{
+			prefs.edit().putString("dropbox-identification", "0").apply();
+			prefs.edit().commit();
+			onBackPressed();
+		}
 	}
 
 	@Override

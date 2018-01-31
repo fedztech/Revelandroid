@@ -16,12 +16,12 @@
 */
 package com.fedztech.revelandroid;
 
-import com.dropbox.client2.exception.DropboxException;
-import com.dropbox.client2.exception.DropboxUnlinkedException;
+//import com.dropbox.client2.exception.DropboxException;
+//import com.dropbox.client2.exception.DropboxUnlinkedException;
 
 import android.os.AsyncTask;
 import android.util.Log;
-
+/*
 public class DropboxTask_GetFileList extends AsyncTask<DropboxTaskParams_Metadata, Void, Long>{
 
 	com.dropbox.client2.DropboxAPI.Entry metadata = null;
@@ -61,3 +61,4 @@ public class DropboxTask_GetFileList extends AsyncTask<DropboxTaskParams_Metadat
     }
 
 }
+*/

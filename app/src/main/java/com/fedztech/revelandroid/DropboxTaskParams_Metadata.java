@@ -16,11 +16,11 @@
 */
 package com.fedztech.revelandroid;
 
-import com.dropbox.client2.DropboxAPI;
-import com.dropbox.client2.android.AndroidAuthSession;
+//import com.dropbox.client2.DropboxAPI;
+//import com.dropbox.client2.android.AndroidAuthSession;
 
 public class DropboxTaskParams_Metadata {
-	public com.dropbox.client2.DropboxAPI.Entry data;
-	public DropboxAPI<AndroidAuthSession> api;
+	//public com.dropbox.client2.DropboxAPI.Entry data;
+	//public DropboxAPI<AndroidAuthSession> api;
 	public DropboxListener_OpenFileProgress progress;
 }

@@ -16,13 +16,13 @@
 */
 package com.fedztech.revelandroid;
 
-import com.dropbox.client2.ProgressListener;
+//import com.dropbox.client2.ProgressListener;
 
 
-public class DropboxListener_OpenFileProgress extends ProgressListener {
+public class DropboxListener_OpenFileProgress /* extends ProgressListener */ {
 
 	private double progressPercent = 0.0;
-	@Override
+	//@Override
 	public void onProgress(long bytes, long total) {
 		if(progressPercent < 1.0)
 		{

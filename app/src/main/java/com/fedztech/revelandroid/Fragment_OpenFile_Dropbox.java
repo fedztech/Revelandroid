@@ -17,13 +17,20 @@
 package com.fedztech.revelandroid;
 
 import java.io.ByteArrayOutputStream;
-import com.dropbox.client2.DropboxAPI;
-import com.dropbox.client2.android.AndroidAuthSession;
-import com.dropbox.client2.session.AccessTokenPair;
-import com.dropbox.client2.session.AppKeyPair;
-import com.dropbox.client2.session.Session.AccessType;
+import java.io.IOException;
+
+import com.dropbox.core.DbxRequestConfig;
+import com.dropbox.core.http.StandardHttpRequestor;
+import com.dropbox.core.json.JsonReadException;
+import com.dropbox.core.v2.DbxClientV2;
+import com.dropbox.core.v2.files.ListFolderResult;
+import com.dropbox.core.http.OkHttp3Requestor;
+import com.fedztech.revelandroid.ListFolderTask;
+
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.app.Fragment;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
@@ -37,7 +44,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
-
+import com.dropbox.core.android.Auth;
+import android.content.SharedPreferences;
 import com.fedztech.revelandroid.data.RevelationData;
 import com.fedztech.revelandroid.data.RevelationDataBase;
 import com.fedztech.revelandroid.data.RevelationDataFactory;
@@ -53,8 +61,13 @@ public class Fragment_OpenFile_Dropbox extends Fragment implements OnClickListen
     final static private String APP_KEY = "xxxxxxxxxxxxxxx";
     // the app secret is replaced by the one given by dropbox
 	final static private String APP_SECRET = "xxxxxxxxxxxxxxx";
-	final static private AccessType ACCESS_TYPE = AccessType.APP_FOLDER;
-	private DropboxAPI<AndroidAuthSession> mDBApi;
+	//final static private AccessType ACCESS_TYPE = AccessType.APP_FOLDER;
+	//private DropboxAPI<AndroidAuthSession> mDBApi;
+
+	private DbxRequestConfig requestConfig = new DbxRequestConfig("Revelandroid/1.1");
+	private DbxClientV2 dropboxClient;// = new DbxClientV2(requestConfig, APP_KEY);
+
+
 	private boolean isLoggedIn;
 	Spinner fileListSpinner = null;
 	EditText passwordField = null;
@@ -71,6 +84,8 @@ public class Fragment_OpenFile_Dropbox extends Fragment implements OnClickListen
         public void onOpenFile(RevelationDataBase position);
     }
 
+
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, 
         Bundle savedInstanceState) {
@@ -78,9 +93,50 @@ public class Fragment_OpenFile_Dropbox extends Fragment implements OnClickListen
         if (savedInstanceState != null) {
             //TODO: Save/Restore state
         }
-        
-		AndroidAuthSession session = buildSession();
-		mDBApi = new DropboxAPI<AndroidAuthSession>(session); 
+
+		SharedPreferences prefs = getActivity().getSharedPreferences("dropbox-settings", Context.MODE_PRIVATE);
+		String accessToken = prefs.getString("access-token", null);
+		if (accessToken == null) {
+			accessToken = Auth.getOAuth2Token();
+			if (accessToken != null) {
+				prefs.edit().putString("access-token", accessToken).apply();
+				prefs.edit().commit();
+			}
+		}
+		if (accessToken == null){
+			try {
+				//After this line, another activity will be called.
+				// So no code should be active
+				Auth.startOAuth2Authentication(getActivity().getApplicationContext(),APP_KEY);
+				prefs.edit().putString("dropbox-identification", "1").apply();
+				return null;
+			}
+			catch(Exception ex) {
+				//errorText.setText(ex.getLocalizedMessage());
+				return null;
+			}
+		}
+
+
+
+
+
+        try {
+			StandardHttpRequestor requestor = new StandardHttpRequestor(StandardHttpRequestor.Config.DEFAULT_INSTANCE);
+			DbxRequestConfig requestConf = DbxRequestConfig.newBuilder("\"Revelandroid/1.1\"")
+					.withHttpRequestor(requestor)
+					.build();
+			//DbxRequestConfig requestConf = DbxRequestConfig.newBuilder("\"Revelandroid/1.1\"")
+			//		.withHttpRequestor(new OkHttp3Requestor(OkHttp3Requestor.defaultOkHttpClient()))
+			//		.build();
+			dropboxClient = new DbxClientV2(requestConf, accessToken);
+		}
+		catch(Exception ex)
+		{
+			errorText.setText(ex.getLocalizedMessage());
+		}
+		//AndroidAuthSession session = buildSession();
+		//mDBApi = new DropboxAPI<AndroidAuthSession>(session);
 		
         // Inflate the layout for this fragment
 		View openFileView = null;
@@ -108,24 +164,8 @@ public class Fragment_OpenFile_Dropbox extends Fragment implements OnClickListen
 		if(view != null){
 			passwordField = (EditText)view;
 		}
-		
-		if(mDBApi != null){
-			boolean isLoggedIn = mDBApi.getSession().isLinked();
-	    	if(!isLoggedIn){
-				try{
-					mDBApi.getSession().startAuthentication(getActivity());
-				}
-				catch(IllegalStateException ex){
-					errorText.setText(ex.getLocalizedMessage());
-				}
-	    	}
-	    	else{
-	    		initializeFields();
-	    	}			
-		}
-		else{
-			errorText.setText(R.string.error_Dropbox_Connect);
-		}
+
+		initializeFields();
 		
         return openFileView;
     }
@@ -135,67 +175,47 @@ public class Fragment_OpenFile_Dropbox extends Fragment implements OnClickListen
     }
     
     private void initializeFields(){
-    	
-    	if(fieldsInitialized == false){
-    		if(fileListSpinner != null)
-			{
-				
-				DropboxTaskParams_Metadata params = new DropboxTaskParams_Metadata();
-				params.data = null;
-				params.api = mDBApi;
-				params.progress = new DropboxListener_OpenFileProgress();
-				params.progress.onProgress(0L, 1L);
-				new DropboxTask_GetFileList().execute(params);
-				
-				
+    	if(fieldsInitialized == true)
+		{
+			return;
+		}
 
-				while(params.progress.getProgress() < 1.0){
-					try {
-						Thread.sleep(10);
-					} catch (InterruptedException e) {
-						// Ignore
-					}
+		if(fileListSpinner == null ||
+				passwordField == null ||
+				openButton == null) {
+			//Bug
+			return;
+		}
+
+
+		new ListFolderTask(dropboxClient, new ListFolderTask.Callback() {
+			@Override
+			public void onDataLoaded(ListFolderResult result) {
+
+				for(int ix= 0; ix < result.getEntries().size(); ix++)
+				{
+					filesAdapter.add(result.getEntries().get(ix).getName());
 				}
-				
-				if(params.data != null && filesAdapter!= null){
-					if(params.data.contents.size()>0){
-						for(int ix= 0; ix < params.data.contents.size(); ix++){
-							filesAdapter.add(params.data.contents.get(ix).fileName());
-						}
-						if(errorText != null){
-							errorText.setText(R.string.instr_Dropbox_OpenFile);
-						}
-					}
-					else{
-						if(errorText !=null){
-							errorText.setText(R.string.error_Dropbox_NoFiles);
-						}
-					}
+
+				filesAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+				if(filesAdapter.getCount()>0){
+					fileListSpinner.setAdapter(filesAdapter);
 				}
-				
-				if(filesAdapter != null){
-					filesAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-					if(fileListSpinner != null && filesAdapter.getCount()>0){
-						fileListSpinner.setAdapter(filesAdapter);
-					}
-					else{
-						if(fileListSpinner != null){
-							fileListSpinner.setEnabled(false);
-						}
-						if(passwordField != null){
-							passwordField.setEnabled(false);
-						}
-						if(openButton != null){
-							openButton.setClickable(false);
-						}
-						
-						errorText.setText(R.string.error_Dropbox_NoFiles);
-					}
+				else{
+
+					fileListSpinner.setEnabled(false);
+					passwordField.setEnabled(false);
+					openButton.setClickable(false);
+					errorText.setText(R.string.error_Dropbox_NoFiles);
 				}
-				
 				fieldsInitialized = true;
-			}			
-    	}
+			}
+
+			@Override
+			public void onError(Exception e) {
+				errorText.setText(e.getLocalizedMessage());
+			}
+		}).execute("");
     }
 
     @Override
@@ -216,7 +236,7 @@ public class Fragment_OpenFile_Dropbox extends Fragment implements OnClickListen
     
 	public void onResume() {
 	    super.onResume();
-
+/*
 	    if (mDBApi.getSession().authenticationSuccessful()) {
 	        try {
 	            mDBApi.getSession().finishAuthentication();
@@ -227,6 +247,7 @@ public class Fragment_OpenFile_Dropbox extends Fragment implements OnClickListen
 	            Log.i("DbAuthLog", "Error authenticating", e);
 	        }
 	    }
+	    */
 	}
 	
     private void storeKeys(String key, String secret) {
@@ -260,7 +281,7 @@ public class Fragment_OpenFile_Dropbox extends Fragment implements OnClickListen
         edit.clear();
         edit.commit();
     }
-	
+	/*
     private AndroidAuthSession buildSession() {
         AppKeyPair appKeyPair = new AppKeyPair(APP_KEY, APP_SECRET);
         AndroidAuthSession session;
@@ -275,7 +296,7 @@ public class Fragment_OpenFile_Dropbox extends Fragment implements OnClickListen
 
         return session;
     }
-
+*/
 	@Override
 	public void onClick(View v) {
 		switch (v.getId()) {
@@ -304,7 +325,7 @@ public class Fragment_OpenFile_Dropbox extends Fragment implements OnClickListen
 		}
 		
 		isLoggedIn = false;
-		
+		/*
 		if(mDBApi != null){
 			isLoggedIn = mDBApi.getSession().isLinked();
 		}
@@ -365,6 +386,7 @@ public class Fragment_OpenFile_Dropbox extends Fragment implements OnClickListen
     		   
     		}  	
     			  		
-    	}	
+    	}
+    		*/
 	}
 }

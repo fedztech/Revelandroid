@@ -20,12 +20,11 @@ import java.io.ByteArrayOutputStream;
 
 import android.widget.TextView;
 
-import com.dropbox.client2.DropboxAPI;
-import com.dropbox.client2.android.AndroidAuthSession;
+
 
 public class DropboxTaskParams_OpenFile {
 	public String fileName;
 	public ByteArrayOutputStream data;
-	public DropboxAPI<AndroidAuthSession> api;
+	//public DropboxAPI<AndroidAuthSession> api;
 	public DropboxListener_OpenFileProgress progress;
 }

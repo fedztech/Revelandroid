@@ -21,10 +21,11 @@ import java.io.IOException;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import com.dropbox.client2.DropboxAPI.DropboxFileInfo;
-import com.dropbox.client2.exception.DropboxException;
-import com.dropbox.client2.exception.DropboxUnlinkedException;
+//import com.dropbox.client2.DropboxAPI.DropboxFileInfo;
+//import com.dropbox.client2.exception.DropboxException;
+//import com.dropbox.client2.exception.DropboxUnlinkedException;
 
+/*
 public class DropboxTask_OpenFile extends AsyncTask<DropboxTaskParams_OpenFile, Void, Long>
 {
 	
@@ -63,3 +64,4 @@ public class DropboxTask_OpenFile extends AsyncTask<DropboxTaskParams_OpenFile, 
 
 	
 };
+*/
