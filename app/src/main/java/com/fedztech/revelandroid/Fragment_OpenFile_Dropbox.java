@@ -17,14 +17,20 @@
 package com.fedztech.revelandroid;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.List;
 
 import com.dropbox.core.DbxRequestConfig;
 import com.dropbox.core.http.StandardHttpRequestor;
 import com.dropbox.core.json.JsonReadException;
 import com.dropbox.core.v2.DbxClientV2;
+import com.dropbox.core.v2.files.FileMetadata;
 import com.dropbox.core.v2.files.ListFolderResult;
 import com.dropbox.core.http.OkHttp3Requestor;
+import com.dropbox.core.v2.files.Metadata;
 import com.fedztech.revelandroid.ListFolderTask;
 
 import android.app.Activity;
@@ -51,9 +57,9 @@ import com.fedztech.revelandroid.data.RevelationDataBase;
 import com.fedztech.revelandroid.data.RevelationDataFactory;
 import com.fedztech.revelandroid.data.RevelationData_Exception;
 
-public class Fragment_OpenFile_Dropbox extends Fragment implements OnClickListener{
-    OnOpenFileListener mCallback;
-    
+public class Fragment_OpenFile_Dropbox extends Fragment implements OnClickListener {
+	OnOpenFileListener mCallback;
+
 	final static private String ACCOUNT_PREFS_NAME = "prefs";
     final static private String ACCESS_KEY_NAME = "ACCESS_KEY";
     final static private String ACCESS_SECRET_NAME = "ACCESS_SECRET";
@@ -75,24 +81,26 @@ public class Fragment_OpenFile_Dropbox extends Fragment implements OnClickListen
 	ArrayAdapter<String> filesAdapter = null;
 	TextView errorText = null;
 	Button openButton = null;
-	
-	
-	
-    // The container Activity must implement this interface so the frag can deliver messages
-    public interface OnOpenFileListener {
-        /** Called by HeadlinesFragment when a list item is selected */
-        public void onOpenFile(RevelationDataBase position);
-    }
+	List<Metadata> filesMetadata = null;
+	File theDownloadedFile = null;
+	byte[] fileByteArray = null;
+
+	// The container Activity must implement this interface so the frag can deliver messages
+	public interface OnOpenFileListener {
+		/**
+		 * Called by HeadlinesFragment when a list item is selected
+		 */
+		public void onOpenFile(RevelationDataBase position);
+	}
 
 
+	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup container,
+							 Bundle savedInstanceState) {
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, 
-        Bundle savedInstanceState) {
-
-        if (savedInstanceState != null) {
-            //TODO: Save/Restore state
-        }
+		if (savedInstanceState != null) {
+			//TODO: Save/Restore state
+		}
 
 		SharedPreferences prefs = getActivity().getSharedPreferences("dropbox-settings", Context.MODE_PRIVATE);
 		String accessToken = prefs.getString("access-token", null);
@@ -103,25 +111,21 @@ public class Fragment_OpenFile_Dropbox extends Fragment implements OnClickListen
 				prefs.edit().commit();
 			}
 		}
-		if (accessToken == null){
+		if (accessToken == null) {
 			try {
 				//After this line, another activity will be called.
 				// So no code should be active
-				Auth.startOAuth2Authentication(getActivity().getApplicationContext(),APP_KEY);
+				Auth.startOAuth2Authentication(getActivity().getApplicationContext(), APP_KEY);
 				prefs.edit().putString("dropbox-identification", "1").apply();
 				return null;
-			}
-			catch(Exception ex) {
+			} catch (Exception ex) {
 				//errorText.setText(ex.getLocalizedMessage());
 				return null;
 			}
 		}
 
 
-
-
-
-        try {
+		try {
 			StandardHttpRequestor requestor = new StandardHttpRequestor(StandardHttpRequestor.Config.DEFAULT_INSTANCE);
 			DbxRequestConfig requestConf = DbxRequestConfig.newBuilder("\"Revelandroid/1.1\"")
 					.withHttpRequestor(requestor)
@@ -130,57 +134,54 @@ public class Fragment_OpenFile_Dropbox extends Fragment implements OnClickListen
 			//		.withHttpRequestor(new OkHttp3Requestor(OkHttp3Requestor.defaultOkHttpClient()))
 			//		.build();
 			dropboxClient = new DbxClientV2(requestConf, accessToken);
-		}
-		catch(Exception ex)
-		{
+		} catch (Exception ex) {
 			errorText.setText(ex.getLocalizedMessage());
 		}
 		//AndroidAuthSession session = buildSession();
 		//mDBApi = new DropboxAPI<AndroidAuthSession>(session);
-		
-        // Inflate the layout for this fragment
+
+		// Inflate the layout for this fragment
 		View openFileView = null;
-		openFileView = inflater.inflate(R.layout.fragment_openfile_dropbox, container, false);		
-		
+		openFileView = inflater.inflate(R.layout.fragment_openfile_dropbox, container, false);
+
 		openButton = (Button) openFileView.findViewById(R.id.buttonOpen);
-		if(openButton != null){
+		if (openButton != null) {
 			openButton.setOnClickListener(this);
 		}
-		
+
 		View view = openFileView.findViewById(R.id.fileChoicesSpinner);
-		
-		if(view != null){
-			fileListSpinner = (Spinner)view;
+
+		if (view != null) {
+			fileListSpinner = (Spinner) view;
 		}
-		
+
 		view = openFileView.findViewById(R.id.errorText);
-		if(view != null){
-			errorText = (TextView)view;
+		if (view != null) {
+			errorText = (TextView) view;
 		}
-		
+
 		filesAdapter = new ArrayAdapter<String>(inflater.getContext(), android.R.layout.simple_dropdown_item_1line, android.R.id.text1);
-		
+
 		view = openFileView.findViewById(R.id.editTextPassword);
-		if(view != null){
-			passwordField = (EditText)view;
+		if (view != null) {
+			passwordField = (EditText) view;
 		}
 
 		initializeFields();
-		
-        return openFileView;
-    }
-    
-    private void resetFields(){
-    	fieldsInitialized = false;
-    }
-    
-    private void initializeFields(){
-    	if(fieldsInitialized == true)
-		{
+
+		return openFileView;
+	}
+
+	private void resetFields() {
+		fieldsInitialized = false;
+	}
+
+	private void initializeFields() {
+		if (fieldsInitialized == true) {
 			return;
 		}
 
-		if(fileListSpinner == null ||
+		if (fileListSpinner == null ||
 				passwordField == null ||
 				openButton == null) {
 			//Bug
@@ -192,16 +193,16 @@ public class Fragment_OpenFile_Dropbox extends Fragment implements OnClickListen
 			@Override
 			public void onDataLoaded(ListFolderResult result) {
 
-				for(int ix= 0; ix < result.getEntries().size(); ix++)
-				{
-					filesAdapter.add(result.getEntries().get(ix).getName());
+				filesMetadata = result.getEntries();
+				for (int ix = 0; ix < filesMetadata.size(); ix++) {
+					filesAdapter.add(filesMetadata.get(ix).getName());
+
 				}
 
 				filesAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-				if(filesAdapter.getCount()>0){
+				if (filesAdapter.getCount() > 0) {
 					fileListSpinner.setAdapter(filesAdapter);
-				}
-				else{
+				} else {
 
 					fileListSpinner.setEnabled(false);
 					passwordField.setEnabled(false);
@@ -216,26 +217,26 @@ public class Fragment_OpenFile_Dropbox extends Fragment implements OnClickListen
 				errorText.setText(e.getLocalizedMessage());
 			}
 		}).execute("");
-    }
+	}
 
-    @Override
-    public void onStart() {
-        super.onStart();
-    }
+	@Override
+	public void onStart() {
+		super.onStart();
+	}
 
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
+	@Override
+	public void onAttach(Activity activity) {
+		super.onAttach(activity);
 
-        try {
-            mCallback = (OnOpenFileListener) activity;
-        } catch (ClassCastException e) {
-            throw new ClassCastException(activity.toString() + " must implement OnOpenFileListener");
-        }
-    }
-    
+		try {
+			mCallback = (OnOpenFileListener) activity;
+		} catch (ClassCastException e) {
+			throw new ClassCastException(activity.toString() + " must implement OnOpenFileListener");
+		}
+	}
+
 	public void onResume() {
-	    super.onResume();
+		super.onResume();
 /*
 	    if (mDBApi.getSession().authenticationSuccessful()) {
 	        try {
@@ -249,144 +250,154 @@ public class Fragment_OpenFile_Dropbox extends Fragment implements OnClickListen
 	    }
 	    */
 	}
-	
-    private void storeKeys(String key, String secret) {
-        // Save the access key for later
-        SharedPreferences prefs = getActivity().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
-        Editor edit = prefs.edit();
-        edit.putString(ACCESS_KEY_NAME, key);
-        edit.putString(ACCESS_SECRET_NAME, secret);
-        edit.commit();
-    }
-	
-	
-    private String[] getKeys() {
-        SharedPreferences prefs = getActivity().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
-        String key = prefs.getString(ACCESS_KEY_NAME, null);
-        String secret = prefs.getString(ACCESS_SECRET_NAME, null);
-        if (key != null && secret != null) {
-        	String[] ret = new String[2];
-        	ret[0] = key;
-        	ret[1] = secret;
-        	return ret;
-        } else {
-        	return null;
-        }
-    }	
-    
-    @SuppressWarnings("unused")
+
+	private void storeKeys(String key, String secret) {
+		// Save the access key for later
+		SharedPreferences prefs = getActivity().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
+		Editor edit = prefs.edit();
+		edit.putString(ACCESS_KEY_NAME, key);
+		edit.putString(ACCESS_SECRET_NAME, secret);
+		edit.commit();
+	}
+
+
+	private String[] getKeys() {
+		SharedPreferences prefs = getActivity().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
+		String key = prefs.getString(ACCESS_KEY_NAME, null);
+		String secret = prefs.getString(ACCESS_SECRET_NAME, null);
+		if (key != null && secret != null) {
+			String[] ret = new String[2];
+			ret[0] = key;
+			ret[1] = secret;
+			return ret;
+		} else {
+			return null;
+		}
+	}
+
+	@SuppressWarnings("unused")
 	private void clearKeys() {
-        SharedPreferences prefs = getActivity().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
-        Editor edit = prefs.edit();
-        edit.clear();
-        edit.commit();
-    }
-	/*
-    private AndroidAuthSession buildSession() {
-        AppKeyPair appKeyPair = new AppKeyPair(APP_KEY, APP_SECRET);
-        AndroidAuthSession session;
+		SharedPreferences prefs = getActivity().getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
+		Editor edit = prefs.edit();
+		edit.clear();
+		edit.commit();
+	}
 
-        String[] stored = getKeys();
-        if (stored != null) {
-            AccessTokenPair accessToken = new AccessTokenPair(stored[0], stored[1]);
-            session = new AndroidAuthSession(appKeyPair, ACCESS_TYPE, accessToken);
-        } else {
-            session = new AndroidAuthSession(appKeyPair, ACCESS_TYPE);
-        }
-
-        return session;
-    }
-*/
 	@Override
 	public void onClick(View v) {
 		switch (v.getId()) {
-		case R.id.buttonOpen:
-			openAndDecodeFile();
+			case R.id.buttonOpen:
+				openAndDecodeFile();
 		}
 	}
-	
-	public void openAndDecodeFile()
-	{
-		//Parameter Validation
+
+	void decodeFile(){
 		int passwordLength = passwordField.getText().length();
 		if(passwordLength == 0 || passwordLength > 32){
 			new DialogFragment_Alert(R.string.error_InvalidPassword).show(getFragmentManager(), "");
 			return;
 		}
-		
+		byte[] password = new byte[32];
+			if(passwordField !=null)
+
+		{
+
+
+			for (int ix = 0; ix < passwordField.getText().length(); ix++) {
+				password[ix] = (byte) passwordField.getText().charAt(ix);
+			}
+
+			for (int ix = passwordLength; ix < 32; ix++) {
+				password[ix] = 0x00;
+			}
+
+			passwordField.setText("");
+		}
+
+			try
+
+		{
+			mCallback.onOpenFile(RevelationDataFactory.getRevelationData(fileByteArray, password));
+		}  catch(
+		RevelationData_Exception e) {
+			new DialogFragment_Alert(e.getCode()).show(getFragmentManager(), "");
+		}catch(Exception e){
+			new DialogFragment_Alert(R.string.error_Unknown).show(getFragmentManager(), "");
+		} finally {
+
+		}
+		resetFields();
+	}
+
+
+
+	boolean loadFile(File file)
+	{
+		if(file != null){
+			if(file.exists() && file.isFile()){
+				FileInputStream is = null;
+				try {
+					is = new FileInputStream(file);
+				} catch (FileNotFoundException e) {
+					errorText.setText(R.string.error_FileNotFound);
+				}
+				if(is != null){
+					if(file.length() > 0){
+						fileByteArray = new byte[(int) file.length()];
+						if( fileByteArray != null ){
+							try {
+								is.read(fileByteArray);
+							} catch (IOException e) {
+								errorText.setText(e.getMessage());
+								return false;
+							}
+						}
+					}
+				}
+			}
+			else{
+				errorText.setText(R.string.error_FileNotFound);
+				return false;
+			}
+		}
+		return true;
+	}
+
+	public void openAndDecodeFile()
+	{
 		String selectedFileName = "";
 		if(fileListSpinner.getSelectedItem()!= null){
 			selectedFileName = "/" + fileListSpinner.getSelectedItem().toString();
 		}
-		
+
 		if(selectedFileName.length()<=1){
 			new DialogFragment_Alert(R.string.error_InvalidFileChosen).show(getFragmentManager(), "");
-			return;
 		}
-		
-		isLoggedIn = false;
-		/*
-		if(mDBApi != null){
-			isLoggedIn = mDBApi.getSession().isLinked();
+
+		FileMetadata fm = null;
+		if (filesMetadata.get(fileListSpinner.getSelectedItemPosition()) instanceof FileMetadata) {
+			fm = (FileMetadata) filesMetadata.get(fileListSpinner.getSelectedItemPosition());
 		}
-		
-    	if(!isLoggedIn){
-    		mDBApi.getSession().startAuthentication(getActivity());
-    	}
-    	else{
-    		
-    		errorText.setText(R.string.instr_Dropbox_Opening);
-    		
-    		DropboxTaskParams_OpenFile openFileParams = new DropboxTaskParams_OpenFile();
-    		openFileParams.data = new ByteArrayOutputStream();
-    		openFileParams.api = mDBApi;
-    		openFileParams.progress = new DropboxListener_OpenFileProgress();
-    		openFileParams.fileName = selectedFileName;
-    		
 
-    		if(errorText != null){
-    			errorText.setText(R.string.instr_Dropbox_Opening);
-    		}
-    		
-			try {
-    		    new DropboxTask_OpenFile().execute(openFileParams);
-    		    while(openFileParams.progress.getProgress()<1.0){
-    		    	Thread.sleep(10);
-    		    }
-    		    
-                byte[] password = new byte[32];
-                if(passwordField != null){
-                    
-                   
-                	for(int ix=0; ix < passwordField.getText().length(); ix++){
-					    password[ix] = (byte) passwordField.getText().charAt(ix);
-                	}   
-                	
-                    for(int ix = passwordLength; ix< 32; ix++){
-                    	password[ix] = 0x00;
-                    }
-                    
-                    passwordField.setText("");
-                }
+		theDownloadedFile = null;
+		if(fm!= null) {
+			new DropboxTask_OpenFile(getActivity().getApplicationContext(),
+					dropboxClient,
+					new DropboxTask_OpenFile.Callback() {
+						@Override
+						public void onDownloadComplete(File result) {
+							if(loadFile(result))
+							{
+								decodeFile();
+							}
+						}
 
-                if(openFileParams.data.size() > 0){
-					mCallback.onOpenFile(RevelationDataFactory.getRevelationData(openFileParams.data.toByteArray(), password));
-                }
-                else{
-                	new DialogFragment_Alert(R.string.error_File_Empty).show(getFragmentManager(), "");
-                }
-                  
-                resetFields();
-    		    
-    		}  catch (RevelationData_Exception e) {
-				new DialogFragment_Alert(e.getCode()).show(getFragmentManager(), "");
-			}catch(Exception e){
-				new DialogFragment_Alert(R.string.error_Unknown).show(getFragmentManager(), "");
-    		} finally {
-    		   
-    		}  	
-    			  		
-    	}
-    		*/
+						@Override
+						public void onError(Exception e) {
+							Log.i("OpenFile", e.getMessage());
+
+						}
+					}).execute(fm);
+		}
 	}
 }
